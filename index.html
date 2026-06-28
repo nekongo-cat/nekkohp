@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ねこんごのホームページもどき - 修正版</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"M PLUS Rounded 1c"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            display: ['"Space Grotesk"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              light: '#22d3ee',
+              DEFAULT: '#06b6d4',
+              dark: '#0891b2',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: "M PLUS Rounded 1c", sans-serif; }
+    .neon-border { box-shadow: 0 0 15px rgba(6, 182, 212, 0.15); }
+    .neon-border-hover:hover { box-shadow: 0 0 25px rgba(6, 182, 212, 0.35); border-color: rgba(6, 182, 212, 0.5); }
+    .text-neon { text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans overflow-x-hidden select-none relative pb-12">
+
+  <div class="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0 opacity-10">
+    <div class="absolute w-72 h-72 rounded-full bg-brand blur-[120px] -top-20 -left-20 animate-pulse"></div>
+    <div class="absolute w-96 h-96 rounded-full bg-cyan-500 blur-[150px] -bottom-30 -right-20"></div>
+  </div>
+
+  <div class="relative z-10 flex flex-col min-h-screen">
+    <header class="flex items-center justify-between px-4 py-3 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800 sticky top-0 z-40">
+      <div class="flex items-center gap-2">
+        <span class="text-xl animate-bounce">🐈</span>
+        <span class="font-extrabold tracking-tight text-white font-display text-sm md:text-base">ねこんごのﾎｰﾑﾍﾟｰｼﾞもどき</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div id="headerAuthSection" class="flex items-center gap-2">
+          <span class="text-xs text-zinc-500 font-mono">読込中...</span>
+        </div>
+      </div>
+    </header>
+
+    <div id="globalStatusBar" class="hidden bg-amber-500/10 border-b border-amber-500/20 text-amber-300 text-xs px-4 py-2"></div>
+
+    <nav class="flex justify-around items-center bg-zinc-900/90 border-b border-zinc-800 py-1.5 px-2 sticky top-[49px] z-30 backdrop-blur-md text-xs md:text-sm">
+      <button onclick="switchTab('home')" id="tab-home" class="flex-1 py-2 text-center rounded-xl font-bold transition-all duration-200 text-brand bg-zinc-800/80">🏠 ホーム</button>
+      <button onclick="switchTab('about')" id="tab-about" class="flex-1 py-2 text-center rounded-xl font-bold transition-all duration-200 text-zinc-400 hover:text-white hover:bg-zinc-900">📝 ブログ</button>
+      <button onclick="switchTab('tool')" id="tab-tool" class="flex-1 py-2 text-center rounded-xl font-bold transition-all duration-200 text-zinc-400 hover:text-white hover:bg-zinc-900">🛠️ ツール</button>
+      <button onclick="switchTab('link')" id="tab-link" class="flex-1 py-2 text-center rounded-xl font-bold transition-all duration-200 text-zinc-400 hover:text-white hover:bg-zinc-900">🔗 リンク</button>
+    </nav>
+
+    <main class="flex-1 p-4 md:p-6 max-w-4xl mx-auto w-full transition-all duration-300">
+      <section id="sec-home" class="space-y-6">
+        <div class="bg-gradient-to-br from-slate-900 via-zinc-900 to-zinc-950 rounded-3xl p-6 border border-zinc-800 text-center relative overflow-hidden shadow-2xl neon-border">
+          <div class="absolute -top-10 -right-10 w-40 h-40 bg-brand/10 rounded-full blur-2xl"></div>
+          <h2 class="text-2xl md:text-4xl font-black text-white tracking-tight mb-2 text-neon">世界中の猫派の暇人に次ぐ🐾</h2>
+          <p class="text-brand text-xs md:text-sm font-extrabold tracking-widest uppercase mb-6">〜 ねこんごのホームページもどき 〜</p>
+          <div class="relative w-40 h-40 md:w-48 md:h-48 mx-auto my-6 flex items-center justify-center group cursor-pointer select-none">
+            <div class="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 blur-2xl opacity-15 group-hover:opacity-35 group-hover:scale-110 transition-all duration-1000 animate-pulse"></div>
+            <div class="absolute w-full h-full rounded-full border border-dashed border-cyan-500/30 animate-[spin_30s_linear_infinite]"></div>
+            <div class="absolute w-[86%] h-[86%] rounded-full border border-double border-cyan-400/20 animate-[spin_15s_linear_infinite_reverse]"></div>
+            <div class="absolute w-28 h-28 rounded-full bg-zinc-900 border border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.2)] flex flex-col items-center justify-center gap-1 group-hover:scale-105 transition-all duration-500">
+              <span class="text-4xl filter drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]">🐾</span>
+              <span class="text-[10px] font-mono font-bold tracking-widest text-cyan-400">NEKONG0</span>
+            </div>
+          </div>
+          <div class="max-w-xl mx-auto bg-zinc-950/90 rounded-2xl p-5 border border-zinc-800/85 text-left space-y-4">
+            <p class="text-zinc-300 leading-relaxed text-sm">このサイトでは、管理者である <span class="text-cyan-400 font-bold">ねこんご</span> がScratchやGoogle Sites等で作成した数々の「もどき作品」や外部リンクをひとつの秘密基地にまとめ、みなさんの暇を最高に楽しませる活動をしています ZOY!</p>
+            <p class="text-zinc-200 font-bold text-center text-sm md:text-base bg-brand/10 py-2.5 rounded-xl border border-brand/20">是非、お気に入りに登録よろしくお願いします🐾</p>
+            <div class="text-right text-zinc-500 text-xs font-mono font-bold">—— Created by ねこんご ZOY!</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-zinc-900 rounded-2xl p-5 border border-zinc-800 space-y-3 shadow-lg hover:border-zinc-700 transition-all">
+            <h4 class="text-md font-bold text-white flex items-center gap-2 border-b border-zinc-800 pb-2"><span>🐱</span> 管理者って誰？</h4>
+            <p class="text-zinc-400 text-xs leading-relaxed">Scratchや各種プラットフォームで「もどきシリーズ」のミニゲームやお茶目なツールを発信している、中学生の猫派クリエイター「ねこんご」です！</p>
+          </div>
+          <div class="bg-zinc-900 rounded-2xl p-5 border border-zinc-800 space-y-3 shadow-lg hover:border-zinc-700 transition-all">
+            <h4 class="text-md font-bold text-white flex items-center gap-2 border-b border-zinc-800 pb-2"><span>💡</span> もどきシリーズとは？</h4>
+            <p class="text-zinc-400 text-xs leading-relaxed">日常でよく使われる便利なウェブサービスを、ねこんご流にちょっとおバカで可愛いリメイク（もどき化）したツール群です。</p>
+          </div>
+        </div>
+
+        <div class="bg-zinc-900/95 rounded-2xl p-6 border-2 border-brand/20 space-y-4 shadow-xl relative overflow-hidden">
+          <div class="absolute -top-10 -left-10 w-32 h-32 bg-brand/5 rounded-full blur-2xl"></div>
+          <div class="border-b border-zinc-800 pb-3 relative z-10">
+            <span class="bg-brand/10 text-brand text-[9px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">MEMBER SYSTEM</span>
+            <h4 class="text-lg font-bold text-white mt-2 flex items-center gap-2"><span>👥</span> メンバー申請所もどき</h4>
+            <p class="text-xs text-zinc-400 mt-1">アカウント登録を行うと、ねこんごへ「メンバー申請」を送り、公認メンバーとして登録される資格を得られます。</p>
+          </div>
+          <div id="homeMemberPanel" class="p-4 bg-zinc-950/80 rounded-xl border border-zinc-800 relative z-10">
+            <p class="text-xs text-zinc-500 font-mono">読込中...</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-about" class="space-y-6 hidden">
+        <div class="text-center max-w-md mx-auto space-y-1">
+          <h3 class="text-xl md:text-2xl font-black text-white flex items-center justify-center gap-1.5"><span>🐾</span> ブログもどき <span>🐾</span></h3>
+          <p class="text-zinc-400 text-xs">ねこんごの活動、最新ゲームの開発日記、お茶目な日常をリアルタイムに発信中だ ZOY！</p>
+        </div>
+
+        <div class="space-y-4" id="blogContainer">
+          <div class="text-center py-10 space-y-2">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand mx-auto"></div>
+            <p class="text-xs text-zinc-500">ブログをリアルタイムに同期中...</p>
+          </div>
+        </div>
+
+        <div id="adminPanelWrapper" class="hidden mt-8 bg-zinc-900 border-2 border-amber-500/20 rounded-2xl p-6 space-y-6 shadow-2xl relative">
+          <div class="absolute -top-3 left-6 bg-amber-500 text-zinc-950 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest font-mono">🛡️ Admin Control Panel</div>
+          <div class="border-b border-zinc-800 pb-3 flex justify-between items-center">
+            <h4 class="text-base font-bold text-white flex items-center gap-1.5"><span>🔑</span> ねこんご管理者コントロール</h4>
+            <span class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-mono">AUTHORIZED ADMIN</span>
+          </div>
+
+          <div id="adminMainGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 space-y-4">
+              <h5 class="text-xs font-bold text-amber-400 flex items-center gap-1.5 border-b border-zinc-800 pb-1.5"><span>📝</span> 新規ブログ投稿</h5>
+              <div id="adminBlogError" class="text-xs text-red-400 font-bold hidden"></div>
+              <div id="adminBlogSuccess" class="text-xs text-emerald-400 font-bold hidden"></div>
+              <div class="space-y-2 text-xs">
+                <div>
+                  <label class="block text-zinc-400 mb-1 font-bold">記事タイトル</label>
+                  <input type="text" id="postTitle" placeholder="【ついに完成】おもしろゲーム公開 ZOY!" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-zinc-100 focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                  <label class="block text-zinc-400 mb-1 font-bold">タグ (半角カンマ区切り)</label>
+                  <input type="text" id="postTags" placeholder="開発日誌,バグ修正,Scratch" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-zinc-100 focus:outline-none focus:border-amber-500 font-mono">
+                </div>
+                <div>
+                  <label class="block text-zinc-400 mb-1 font-bold">記事本文</label>
+                  <textarea id="postContent" rows="5" placeholder="おもしろいバグを直したんだ ZOY!" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-zinc-100 focus:outline-none focus:border-amber-500"></textarea>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="submitNewBlog()" class="flex-1 bg-amber-500 text-zinc-950 font-bold py-2 rounded-lg text-xs hover:bg-amber-400 transition-colors shadow">新規ブログを投稿する ZOY! 🐾</button>
+                <button id="adminSeedBtn" onclick="seedInitialBlogs()" class="bg-zinc-850 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-3 py-2 rounded-lg text-xs font-bold transition-all">サンプル投入 🧪</button>
+              </div>
+            </div>
+
+            <div id="adminRequestBlock" class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 flex flex-col h-[350px]">
+              <h5 class="text-xs font-bold text-amber-400 flex items-center gap-1.5 border-b border-zinc-800 pb-1.5 mb-2 flex-shrink-0"><span>👥</span> メンバー申請管理</h5>
+              <div id="adminRequestError" class="text-xs text-red-400 font-bold hidden mb-2"></div>
+              <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="adminRequestsList">
+                <p class="text-xs text-zinc-500 text-center py-10">申請はありません ZOY。</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="adminToolsBlock" class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-zinc-800/60 pt-6">
+            <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 space-y-4">
+              <h5 class="text-xs font-bold text-amber-400 flex items-center gap-1.5 border-b border-zinc-800 pb-1.5"><span>🛠️</span> 新規ツール追加</h5>
+              <div id="adminToolError" class="text-xs text-red-400 font-bold hidden"></div>
+              <div id="adminToolSuccess" class="text-xs text-emerald-400 font-bold hidden"></div>
+              <div class="space-y-2 text-xs">
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-zinc-400 mb-1 font-bold">ツールID (半角英数)</label>
+                    <input type="text" id="toolIdInput" placeholder="my-game" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-zinc-100 focus:outline-none focus:border-amber-500 font-mono">
+                  </div>
+                  <div>
+                    <label class="block text-zinc-400 mb-1 font-bold">絵文字 (1文字)</label>
+                    <input type="text" id="toolEmojiInput" placeholder="🎮" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-zinc-100 focus:outline-none focus:border-amber-500">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-zinc-400 mb-1 font-bold">ツール名</label>
+                  <input type="text" id="toolNameInput" placeholder="おもしろゲームもどき" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-zinc-100 focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                  <label class="block text-zinc-400 mb-1 font-bold">ツール説明</label>
+                  <input type="text" id="toolDescInput" placeholder="ねこんごが作った最高に暇をつぶせるおもしろゲームだ ZOY!" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-zinc-100 focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                  <label class="block text-zinc-400 mb-1 font-bold">ツールURL</label>
+                  <input type="text" id="toolUrlInput" placeholder="https://scratch.mit.edu/projects/..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-zinc-100 focus:outline-none focus:border-amber-500 font-mono">
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                  <input type="checkbox" id="toolMembersOnlyInput" class="rounded bg-zinc-900 border-zinc-800 text-amber-500 focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer">
+                  <label for="toolMembersOnlyInput" class="text-zinc-300 font-bold select-none cursor-pointer">公認メンバー限定のツールにする 👥</label>
+                </div>
+              </div>
+              <button onclick="submitNewTool()" class="w-full bg-amber-500 text-zinc-950 font-bold py-2 rounded-lg text-xs hover:bg-amber-400 transition-colors shadow">ツールを新しく追加する ZOY! 🐾</button>
+            </div>
+
+            <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 flex flex-col h-[350px]">
+              <h5 class="text-xs font-bold text-amber-400 flex items-center gap-1.5 border-b border-zinc-800 pb-1.5 mb-2 flex-shrink-0"><span>🛠️</span> 追加済みカスタムツール管理</h5>
+              <div id="adminToolsManageError" class="text-xs text-red-400 font-bold hidden mb-2"></div>
+              <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="adminToolsList">
+                <p class="text-xs text-zinc-500 text-center py-10">読込中... ZOY</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-tool" class="space-y-6 hidden">
+        <div class="bg-gradient-to-r from-cyan-950/20 to-zinc-900 p-5 rounded-3xl border border-cyan-950/40 text-center md:text-left md:flex items-center justify-between gap-6">
+          <div class="space-y-1 mb-3 md:mb-0">
+            <h3 class="text-xl font-bold text-white flex items-center justify-center md:justify-start gap-1.5">🛠️ ねこんごの自作ツール <span class="bg-brand/20 text-brand text-[10px] px-2 py-0.5 rounded-full font-bold"></span></h3>
+            <p class="text-zinc-400 text-xs max-w-xl">日常のひらめきや暇つぶし精神から作られた「もどきシリーズ」です。</p>
+          </div>
+          <span class="text-3xl animate-pulse hidden md:block">🛠️</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="toolsListGrid"></div>
+      </section>
+
+      <section id="sec-link" class="space-y-6 hidden">
+        <div class="text-center max-w-md mx-auto space-y-1">
+          <h3 class="text-xl font-black text-white">外部リンク集🐾</h3>
+          <p class="text-zinc-400 text-xs">ねこんごが活動している拠点へのショートカット集です！</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto pt-2">
+          <a href="https://scratch.mit.edu/users/kamidayo_2222/" target="_blank" rel="noopener noreferrer" class="block bg-zinc-900 rounded-2xl p-5 border border-zinc-800 hover:border-orange-500/40 hover:-translate-y-1 transition-all duration-300 shadow-md flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between"><div class="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xl">🐱</div><span class="text-[10px] text-orange-400 font-bold uppercase tracking-wider font-mono">Scratch Portal</span></div>
+              <h4 class="text-base font-bold text-white">Scratch プロフィール</h4>
+              <p class="text-zinc-400 text-xs leading-relaxed">もどきシリーズの原点。</p>
+            </div>
+            <div class="mt-4 bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 px-3 rounded-xl text-center text-xs transition-all shadow-md">Scratch でねこんごをフォローする 🔥</div>
+          </a>
+
+          <a href="https://catngowiki.miraheze.org/wiki" target="_blank" rel="noopener noreferrer" class="block bg-zinc-900 rounded-2xl p-5 border border-zinc-800 hover:border-cyan-500/40 hover:-translate-y-1 transition-all duration-300 shadow-md flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between"><div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-xl">📖</div><span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider font-mono">Official Wiki</span></div>
+              <h4 class="text-base font-bold text-white">Nyan/pedia公式ウィキ</h4>
+              <p class="text-zinc-400 text-xs leading-relaxed">世界設定が保管されている公式データベースです！</p>
+            </div>
+            <div class="mt-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-3 rounded-xl text-center text-xs transition-all shadow-md">公式設定資料ウィキを開く 🐾</div>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-zinc-900/60 border-t border-zinc-800/80 py-6 text-center text-xs text-zinc-500 space-y-2 relative z-10">
+      <div class="flex justify-center gap-3 text-zinc-400 font-medium text-[11px]">
+        <button onclick="switchTab('home')" class="hover:text-brand transition-colors">ホーム</button><span>•</span>
+        <button onclick="switchTab('about')" class="hover:text-brand transition-colors">ブログ</button><span>•</span>
+        <button onclick="switchTab('tool')" class="hover:text-brand transition-colors">ツール</button><span>•</span>
+        <button onclick="switchTab('link')" class="hover:text-brand transition-colors">リンク</button>
+      </div>
+      <p class="font-mono">© 2026 ねこんごのホームページもどき. All rights reserved.</p>
+    </footer>
+  </div>
+
+  <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm hidden p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative">
+      <button onclick="closeAuthModal()" class="absolute top-3 right-3 text-zinc-400 hover:text-white bg-zinc-850 p-1.5 rounded-lg transition-all" title="閉じる">✕</button>
+      <div class="flex bg-zinc-950 border-b border-zinc-800 text-center">
+        <button id="authTabLogin" onclick="switchAuthTab('login')" class="flex-1 py-3 text-center text-xs font-black border-b-2 border-brand text-brand">🔑 ログイン</button>
+        <button id="authTabRegister" onclick="switchAuthTab('register')" class="flex-1 py-3 text-center text-xs font-black border-b-2 border-transparent text-zinc-400 hover:text-white">✨ 新規登録</button>
+        <button id="authTabGuest" onclick="switchAuthTab('guest')" class="flex-1 py-3 text-center text-xs font-black border-b-2 border-transparent text-zinc-400 hover:text-white">🐾 ゲスト登録</button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div id="authAlert" class="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg hidden"></div>
+
+        <div class="space-y-2">
+          <button onclick="handleGoogleLogin()" class="w-full bg-white hover:bg-zinc-100 text-zinc-900 font-bold py-2.5 px-4 rounded-xl text-xs transition-all shadow flex items-center justify-center gap-2">
+            Googleでログインする ZOY! 🐾
+          </button>
+          <p class="text-[10px] text-zinc-400 text-center leading-relaxed">※ Google Sites の埋め込み内ではポップアップがブロックされる場合があります。ダメなら別タブ公開URLでログインするか、下のメール/ゲストを使ってください。</p>
+        </div>
+
+        <div class="flex items-center gap-2 py-1"><div class="h-px bg-zinc-800/80 flex-1"></div><span class="text-[9px] text-zinc-500 font-bold font-mono">またはメールでログイン</span><div class="h-px bg-zinc-800/80 flex-1"></div></div>
+
+        <form id="formLogin" onsubmit="handleLoginSubmit(event)" class="space-y-3.5">
+          <div class="text-xs"><label class="block text-zinc-400 mb-1 font-bold">メールアドレス</label><input type="email" id="loginEmail" required class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-100 focus:outline-none focus:border-brand font-mono"></div>
+          <div class="text-xs"><label class="block text-zinc-400 mb-1 font-bold">パスワード</label><input type="password" id="loginPassword" required class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-100 focus:outline-none focus:border-brand font-mono"></div>
+          <button type="submit" class="w-full bg-brand hover:bg-cyan-400 text-zinc-950 font-black py-2.5 rounded-xl text-xs transition-colors shadow">ログインする ZOY! 🐾</button>
+        </form>
+
+        <form id="formRegister" onsubmit="handleRegisterSubmit(event)" class="space-y-3.5 hidden">
+          <div class="text-xs"><label class="block text-zinc-400 mb-1 font-bold">ニックネーム</label><input type="text" id="registerName" required class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-100 focus:outline-none focus:border-brand"></div>
+          <div class="text-xs"><label class="block text-zinc-400 mb-1 font-bold">メールアドレス</label><input type="email" id="registerEmail" required class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-100 focus:outline-none focus:border-brand font-mono"></div>
+          <div class="text-xs"><label class="block text-zinc-400 mb-1 font-bold">パスワード</label><input type="password" id="registerPassword" required minlength="6" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-100 focus:outline-none focus:border-brand font-mono"></div>
+          <button type="submit" class="w-full bg-brand hover:bg-cyan-400 text-zinc-950 font-black py-2.5 rounded-xl text-xs transition-colors shadow">新規登録する ZOY! ✨</button>
+        </form>
+
+        <form id="formGuest" onsubmit="handleGuestSubmit(event)" class="space-y-3.5 hidden">
+          <div class="text-xs"><label class="block text-zinc-400 mb-1 font-bold">ニックネーム</label><input type="text" id="guestName" required class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-100 focus:outline-none focus:border-brand"></div>
+          <p class="text-[10px] text-zinc-500 leading-relaxed bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-850">※ メール不要。ブラウザのキャッシュを消すと消える可能性あり。</p>
+          <button type="submit" class="w-full bg-brand hover:bg-cyan-400 text-zinc-950 font-black py-2.5 rounded-xl text-xs transition-colors shadow">名前だけでお手軽登録する ZOY! 🐾</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+<script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBfeoL3C6x0GiDeKmTcYW1YKCFojGpHX1g",
+  authDomain: "homepegecat.firebaseapp.com",
+  projectId: "homepegecat",
+  storageBucket: "homepegecat.firebasestorage.app",
+  messagingSenderId: "1004956609026",
+  appId: "1:1004956609026:web:1c863fe08edb091437551b",
+  measurementId: "G-WG294GLW93"
+};
+
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+
+
+const appState = {
+  activeTab: 'home',
+  activeAuthTab: 'login',
+  currentUser: null,
+  userData: null,
+  myRequest: null,
+  blogPosts: [],
+  allRequests: [],
+  likedPosts: JSON.parse(localStorage.getItem('necongo_liked_posts') || '[]'),
+  dynamicTools: [],
+  comments: {},
+  editingPostId: null,
+  connection: {
+    firestoreReady: false,
+    authReady: false,
+    lastError: null,
+    isIframe: window.self !== window.top
+  }
+};
+
+const samplePosts = [
+  {
+    id: "sample-1",
+    title: "【ついに開設】ねこんごのホームページもどきを開設しました！",
+    content: "世界中の猫派の暇人のみなさん、こんにちは！ねこんごです。自分の作った「もどきシリーズ」のツールや、おもしろリンクを1つの場所にまとめるために、この「ホームページもどき」を作りました！",
+    tags: ["ご挨拶", "ホームページ", "暇つぶし"],
+    createdAt: 1781956800000,
+    createdByName: "ねこんご",
+    likeCount: 128
+  },
+  {
+    id: "sample-2",
+    title: "「イラスト絵画投稿もどき」に潜むバグと格闘した話",
+    content: "スマホで描くと線がズレるという謎のバグが発生して1日中悩んでいました（笑）。原因はタッチ座標 of 計算方法でした！",
+    tags: ["開発日誌", "バグ修正", "イラスト"],
+    createdAt: 1781524800000,
+    createdByName: "ねこんご",
+    likeCount: 94
+  }
+];
+
+let unsubscribeUserData = null;
+let unsubscribeMyRequest = null;
+let unsubscribeBlogs = null;
+let unsubscribeAllRequests = null;
+let unsubscribeTools = null;
+
+const toolItems = [];
+
+function setGlobalStatus(message = '', tone = 'amber') {
+  const bar = document.getElementById('globalStatusBar');
+  if (!bar) return;
+  if (!message) {
+    bar.className = 'hidden';
+    bar.textContent = '';
+    return;
+  }
+  const toneClass = tone === 'red'
+    ? 'bg-red-500/10 border-b border-red-500/20 text-red-300 text-xs px-4 py-2'
+    : tone === 'emerald'
+    ? 'bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-300 text-xs px-4 py-2'
+    : 'bg-amber-500/10 border-b border-amber-500/20 text-amber-300 text-xs px-4 py-2';
+  bar.className = toneClass;
+  bar.textContent = message;
+}
+
+function safeErrorMessage(err) {
+  if (!err) return '不明なエラー';
+  return `${err.code ? '[' + err.code + '] ' : ''}${err.message || String(err)}`;
+}
+
+function showError(targetId, message) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  el.textContent = message;
+  el.classList.remove('hidden');
+}
+function hideError(targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  el.classList.add('hidden');
+}
+
+async function preflightFirestore() {
+  try {
+    await db.collection('_healthcheck').limit(1).get();
+    appState.connection.firestoreReady = true;
+    return true;
+  } catch (err) {
+    appState.connection.firestoreReady = false;
+    appState.connection.lastError = err;
+    setGlobalStatus(`Firestore接続テスト失敗: ${safeErrorMessage(err)}`, 'red');
+    return false;
+  }
+}
+
+function getAuthErrorMessage(code) {
+  switch (code) {
+    case 'auth/invalid-email': return 'メールアドレスの形式が正しくありません。';
+    case 'auth/user-disabled': return 'このアカウントは無効化されています。';
+    case 'auth/user-not-found': return 'ユーザーが見つかりません。';
+    case 'auth/wrong-password': return 'パスワードが間違っています。';
+    case 'auth/email-already-in-use': return 'このメールアドレスは既に登録されています。';
+    case 'auth/weak-password': return 'パスワードは6文字以上で入力してください。';
+    case 'auth/popup-blocked': return 'ポップアップがブロックされました。別タブで開くか、メール/ゲストを使ってください。';
+    case 'auth/operation-not-allowed': return 'この認証方法がFirebase側で有効化されていません。';
+    default: return null;
+  }
+}
+
+function renderAll() {
+  renderHeaderAuth();
+  renderMemberSection();
+  renderBlogs();
+  renderAdminPanel();
+  renderToolsGrid();
+}
+
+function renderHeaderAuth() {
+  const headerAuth = document.getElementById('headerAuthSection');
+  if (!headerAuth) return;
+
+  if (appState.currentUser) {
+    const name = appState.userData ? appState.userData.displayName : (appState.currentUser.displayName || "ログイン中");
+    const role = appState.userData ? appState.userData.role : 'user';
+    let roleBadge = '';
+    if (role === 'admin') {
+      roleBadge = '<span class="text-amber-400 text-[10px] bg-amber-400/10 px-1 rounded">管理者</span>';
+    } else if (role === 'moderator') {
+      roleBadge = '<span class="text-cyan-400 text-[10px] bg-cyan-400/10 px-1 rounded">モデレーター</span>';
+    }
+    headerAuth.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-zinc-300 font-bold bg-zinc-800 px-2.5 py-1 rounded-lg border border-zinc-700/50 flex items-center gap-1">
+          🐾 ${escapeHtml(name)} ${roleBadge}
+        </span>
+        <button onclick="handleLogout()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] px-3 py-1.5 rounded-xl transition-all font-bold">ログアウト</button>
+      </div>
+    `;
+  } else {
+    headerAuth.innerHTML = `<button onclick="openAuthModal()" class="bg-brand text-zinc-950 font-black text-xs px-3.5 py-1.5 rounded-xl hover:bg-cyan-400 transition-all shadow shadow-brand/10">ログイン / 新規登録 🐾</button>`;
+  }
+}
+
+function renderMemberSection() {
+  const panel = document.getElementById('homeMemberPanel');
+  if (!panel) return;
+
+  if (!appState.currentUser) {
+    panel.innerHTML = `
+      <div class="text-center py-4 space-y-3">
+        <p class="text-xs text-zinc-400">メンバー申請にはログインが必要です ZOY。</p>
+        <button onclick="openAuthModal()" class="bg-brand text-zinc-950 font-black text-xs px-5 py-2 rounded-xl hover:bg-cyan-400 transition-all shadow">ログインして申請を送る ZOY! 🐾</button>
+      </div>
+    `;
+    return;
+  }
+
+  const isApproved = appState.userData && appState.userData.approvedMember;
+  if (isApproved) {
+    panel.innerHTML = `
+      <div class="flex items-center gap-3 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
+        <span class="text-2xl">🎉</span>
+        <div>
+          <h5 class="text-xs font-black">公認メンバー登録済み ZOY!</h5>
+          <p class="text-[10px] text-zinc-400 mt-0.5">あなたはねこんご公認の特権暇人メンバーです。</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (appState.myRequest) {
+    const status = appState.myRequest.status;
+    if (status === 'pending') {
+      panel.innerHTML = `
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 text-amber-400 text-xs font-bold"><span class="animate-bounce">⏳</span><span>ねこんごにメンバー申請審査中だ ZOY!</span></div>
+          <p class="text-[10px] text-zinc-400 leading-relaxed bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">送信したメッセージ: <span class="text-zinc-200 font-medium">"${escapeHtml(appState.myRequest.message || '')}"</span></p>
+        </div>
+      `;
+    } else if (status === 'rejected') {
+      panel.innerHTML = `
+        <div class="space-y-3">
+          <div class="flex items-center gap-2 text-rose-400 text-xs font-bold"><span>❌</span><span>メンバー申請が却下されてしまいました ZOY...</span></div>
+          <p class="text-[10px] text-zinc-400 leading-relaxed bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">送信したメッセージ: <span class="text-zinc-200">"${escapeHtml(appState.myRequest.message || '')}"</span></p>
+          <button onclick="deleteMyRequest()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold py-1.5 px-3 rounded-lg transition-all border border-zinc-700">申請をやり直す ZOY! 🔄</button>
+        </div>
+      `;
+    } else if (status === 'approved') {
+      panel.innerHTML = `
+        <div class="flex items-center gap-3 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
+          <span class="text-2xl">🎉</span>
+          <div><h5 class="text-xs font-black">申請承認済み ZOY!</h5></div>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  panel.innerHTML = `
+    <form onsubmit="handleApplySubmit(event)" class="space-y-3">
+      <div class="text-xs">
+        <label class="block text-zinc-400 mb-1 font-bold">ねこんごへのメッセージ</label>
+        <input type="text" id="applyMessage" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-zinc-100 text-xs focus:outline-none focus:border-brand">
+      </div>
+      <div id="applyAlert" class="text-xs text-red-400 font-bold hidden bg-red-500/10 p-2 rounded"></div>
+      <button type="submit" class="w-full bg-brand hover:bg-cyan-400 text-zinc-950 font-black py-2 rounded-xl text-xs transition-colors shadow">メンバー申請を送信する ZOY! 🐾</button>
+    </form>
+  `;
+}
+
+const commentUnsubscribers = {};
+
+function subscribeToBlogComments(blogId) {
+  if (commentUnsubscribers[blogId]) return;
+  commentUnsubscribers[blogId] = db.collection('blogs').doc(blogId).collection('comments').orderBy('createdAt', 'asc').onSnapshot((snapshot) => {
+    const comments = [];
+    snapshot.forEach(doc => {
+      comments.push({ id: doc.id, ...doc.data() });
+    });
+    appState.comments[blogId] = comments;
+    renderBlogs();
+  }, (err) => {
+    console.error(`Comments fetch error for blog ${blogId}:`, err);
+  });
+}
+
+async function submitComment(event, blogId) {
+  event.preventDefault();
+  if (!appState.currentUser) return;
+  const input = document.getElementById(`comment-input-${blogId}`);
+  if (!input) return;
+  const content = input.value.trim();
+  if (!content) return;
+
+  const userDisplayName = appState.userData ? appState.userData.displayName : (appState.currentUser.displayName || "暇人メンバー");
+
+  try {
+    const commentDoc = {
+      createdByUid: appState.currentUser.uid,
+      displayName: userDisplayName,
+      content,
+      createdAt: Date.now()
+    };
+    await db.collection('blogs').doc(blogId).collection('comments').add(commentDoc);
+    input.value = '';
+  } catch (err) {
+    setGlobalStatus(`コメント送信失敗: ${safeErrorMessage(err)}`, 'red');
+  }
+}
+
+async function deleteComment(blogId, commentId) {
+  if (!confirm('このコメントを削除しますか ZOY？')) return;
+  try {
+    await db.collection('blogs').doc(blogId).collection('comments').doc(commentId).delete();
+  } catch (err) {
+    setGlobalStatus(`コメント削除失敗: ${safeErrorMessage(err)}`, 'red');
+  }
+}
+
+function renderBlogs() {
+  const container = document.getElementById('blogContainer');
+  if (!container) return;
+  const postsToRender = appState.blogPosts.length > 0 ? appState.blogPosts : samplePosts;
+  const isUsingSample = appState.blogPosts.length === 0;
+  let html = '';
+
+  if (isUsingSample) {
+    html += `<div class="bg-cyan-500/5 border border-cyan-500/20 text-cyan-400 p-3.5 rounded-2xl text-xs text-center font-bold">⚠️ Firestoreからブログを取得できていないため、サンプル記事を表示しています。</div>`;
+  }
+
+  html += postsToRender.map(post => {
+    // Subscribe to comments for non-sample posts dynamically
+    if (!isUsingSample && post.id) {
+      subscribeToBlogComments(post.id);
+    }
+    const postComments = appState.comments[post.id] || [];
+
+    const isEditing = appState.editingPostId === post.id;
+    if (isEditing) {
+      return `
+        <article class="bg-zinc-900 border-2 border-cyan-500 rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between pb-1 border-b border-zinc-800">
+            <span class="text-xs font-bold text-cyan-400">📝 ブログ編集もどき</span>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-[10px] text-zinc-400 mb-1 font-bold">タイトル</label>
+              <input type="text" id="edit-title-${post.id}" value="${escapeHtml(post.title || '')}" class="w-full bg-zinc-950 border border-zinc-850 rounded-lg p-2 text-xs text-zinc-100 focus:outline-none focus:border-brand font-bold">
+            </div>
+            <div>
+              <label class="block text-[10px] text-zinc-400 mb-1 font-bold">タグ (カンマ区切り)</label>
+              <input type="text" id="edit-tags-${post.id}" value="${escapeHtml((post.tags || []).join(', '))}" class="w-full bg-zinc-950 border border-zinc-850 rounded-lg p-2 text-xs text-zinc-100 focus:outline-none focus:border-brand font-mono">
+            </div>
+            <div>
+              <label class="block text-[10px] text-zinc-400 mb-1 font-bold">本文</label>
+              <textarea id="edit-content-${post.id}" rows="6" class="w-full bg-zinc-950 border border-zinc-850 rounded-lg p-2 text-xs text-zinc-100 focus:outline-none focus:border-brand leading-relaxed font-sans">${escapeHtml(post.content || '')}</textarea>
+            </div>
+          </div>
+          <div class="flex gap-2 justify-end pt-1">
+            <button onclick="cancelEditBlogPost()" class="bg-zinc-800 hover:bg-zinc-750 text-zinc-300 font-bold px-3 py-1.5 rounded-lg text-xs transition-all border border-zinc-700/50">キャンセル</button>
+            <button onclick="saveEditBlogPost('${post.id}')" class="bg-brand hover:bg-cyan-400 text-zinc-950 font-black px-4 py-1.5 rounded-lg text-xs transition-all shadow">保存する ZOY!</button>
+          </div>
+        </article>
+      `;
+    }
+
+    const isLiked = appState.likedPosts.includes(post.id);
+    const formattedDate = new Date(post.createdAt || Date.now()).toLocaleDateString('ja-JP', {
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+    const tagsHtml = (post.tags || []).map(tag => `<span class="bg-zinc-800 text-zinc-400 text-[9px] font-bold px-2 py-0.5 rounded-full">#${escapeHtml(tag)}</span>`).join(' ');
+    
+    const isPostOwner = appState.currentUser && post.createdByUid === appState.currentUser.uid;
+    const isAdmin = appState.userData && appState.userData.role === 'admin';
+    const isModerator = appState.userData && appState.userData.role === 'moderator';
+    
+    let editButtons = '';
+    if (isAdmin || (isModerator && isPostOwner)) {
+      editButtons = `
+        <div class="flex items-center gap-1.5">
+          <button onclick="startEditBlogPost('${post.id}')" class="text-cyan-400 hover:text-cyan-300 hover:underline text-[10px] font-bold">編集 ✏️</button>
+          <button onclick="deleteBlogPost('${post.id}')" class="text-rose-500 hover:text-rose-400 hover:underline text-[10px] font-bold">削除 🗑️</button>
+        </div>
+      `;
+    }
+
+    return `
+      <article class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3 hover:border-zinc-700 transition-all duration-200">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950/40 px-2.5 py-1 rounded-md font-bold">${formattedDate}</span>
+          <div class="flex gap-1 flex-wrap">${tagsHtml}</div>
+        </div>
+        <h4 class="text-base md:text-lg font-black text-white leading-snug">${escapeHtml(post.title || '')}</h4>
+        <p class="text-xs md:text-sm text-zinc-300 whitespace-pre-wrap break-words leading-relaxed font-sans">${escapeHtml(post.content || '')}</p>
+        <div class="flex items-center justify-between border-t border-zinc-800/60 pt-3 text-xs">
+          <div class="flex items-center gap-3">
+            <span class="text-[10px] text-zinc-500 font-bold flex items-center gap-1">✍️ By ${escapeHtml(post.createdByName || "ねこんご")}</span>
+            ${editButtons}
+          </div>
+          <button onclick="handleLikeClick('${post.id}')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold border transition-all duration-200 text-xs ${isLiked ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 shadow' : 'bg-zinc-850 text-zinc-400 border-zinc-800 hover:text-rose-400 hover:bg-zinc-800'}" ${isUsingSample ? 'disabled title="サンプル記事にはいいねできません"' : ''}>
+            <span>❤️</span><span>${post.likeCount || 0}</span>
+          </button>
+        </div>
+
+        <!-- コメントセクション -->
+        <div class="mt-4 border-t border-zinc-800/60 pt-4 space-y-3">
+          <div class="text-xs font-bold text-zinc-400 flex items-center gap-1">
+            <span>💬</span><span>コメント (${postComments.length})</span>
+          </div>
+          ${postComments.length === 0 ? `
+            <p class="text-[11px] text-zinc-500 italic pl-1">まだコメントはありません ZOY。</p>
+          ` : `
+            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+              ${postComments.map(comment => {
+                const commentDate = new Date(comment.createdAt || Date.now()).toLocaleDateString('ja-JP', {
+                  month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+                });
+                const isCommentOwnerOrAdminOrMod = appState.currentUser && (comment.createdByUid === appState.currentUser.uid || (appState.userData && (appState.userData.role === 'admin' || appState.userData.role === 'moderator')));
+                const deleteButton = isCommentOwnerOrAdminOrMod ? `
+                  <button onclick="deleteComment('${post.id}', '${comment.id}')" class="text-rose-500 hover:text-rose-400 text-[10px] ml-2 font-bold hover:underline">削除</button>
+                ` : '';
+                return `
+                  <div class="bg-zinc-950/60 p-2.5 rounded-lg border border-zinc-850 text-xs flex justify-between items-start">
+                    <div class="space-y-1">
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-cyan-400">🐾 ${escapeHtml(comment.displayName || '名無しさん')}</span>
+                        <span class="text-[9px] text-zinc-500 font-mono">${commentDate}</span>
+                      </div>
+                      <p class="text-zinc-300 leading-relaxed break-all whitespace-pre-wrap">${escapeHtml(comment.content || '')}</p>
+                    </div>
+                    ${deleteButton}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+          
+          ${appState.currentUser ? `
+            <form onsubmit="submitComment(event, '${post.id}')" class="flex gap-2 mt-2">
+              <input type="text" id="comment-input-${post.id}" placeholder="コメントを書く ZOY... 🐾" required class="flex-1 bg-zinc-950 border border-zinc-850 rounded-lg p-2 text-xs text-zinc-100 focus:outline-none focus:border-brand">
+              <button type="submit" class="bg-brand hover:bg-cyan-400 text-zinc-950 font-black px-4 py-2 rounded-lg text-xs transition-colors shadow">送信</button>
+            </form>
+          ` : `
+            <div class="text-center py-2 bg-zinc-950/30 rounded-lg border border-zinc-850/50">
+              <button onclick="openAuthModal()" class="text-[11px] text-brand hover:underline font-bold">ログインしてコメントする ZOY! 🐾</button>
+            </div>
+          `}
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+function renderAdminPanel() {
+  const wrapper = document.getElementById('adminPanelWrapper');
+  const container = document.getElementById('adminRequestsList');
+  if (!wrapper || !container) return;
+
+  const role = appState.userData ? appState.userData.role : 'user';
+  const isAdmin = role === 'admin';
+  const isModerator = role === 'moderator' || role === 'admin';
+
+  wrapper.classList.toggle('hidden', !isModerator);
+  if (!isModerator) return;
+
+  const panelBadge = wrapper.querySelector('.absolute.-top-3.left-6');
+  const panelTitle = wrapper.querySelector('h4');
+  const authBadge = wrapper.querySelector('.text-\\[10px\\].bg-amber-500\\/10');
+
+  if (panelBadge) {
+    panelBadge.textContent = isAdmin ? '🛡️ Admin Control Panel' : '✍️ Moderator Control Panel';
+  }
+  if (panelTitle) {
+    panelTitle.innerHTML = isAdmin ? '<span>🔑</span> ねこんご管理者コントロール' : '<span>✍️</span> ねこんごモデレーターコントロール';
+  }
+  if (authBadge) {
+    authBadge.textContent = isAdmin ? 'AUTHORIZED ADMIN' : 'AUTHORIZED MODERATOR';
+  }
+
+  const mainGrid = document.getElementById('adminMainGrid');
+  const requestBlock = document.getElementById('adminRequestBlock');
+  const toolsBlock = document.getElementById('adminToolsBlock');
+  const seedBtn = document.getElementById('adminSeedBtn');
+
+  if (requestBlock) requestBlock.classList.toggle('hidden', !isAdmin);
+  if (toolsBlock) toolsBlock.classList.toggle('hidden', !isAdmin);
+  if (seedBtn) seedBtn.classList.toggle('hidden', !isAdmin);
+
+  if (mainGrid) {
+    if (isAdmin) {
+      mainGrid.className = "grid grid-cols-1 md:grid-cols-2 gap-6";
+    } else {
+      mainGrid.className = "grid grid-cols-1 gap-6";
+    }
+  }
+
+  if (isAdmin) {
+    renderAdminToolsManager();
+
+    if (appState.allRequests.length === 0) {
+      container.innerHTML = `<div class="text-center py-12 text-zinc-500 text-xs">申請している暇人はまだいません ZOY。</div>`;
+      return;
+    }
+
+    container.innerHTML = appState.allRequests.map(req => {
+      const date = new Date(req.createdAt || Date.now()).toLocaleString();
+      let statusBadge = '';
+      if (req.status === 'pending') statusBadge = `<span class="bg-amber-400/10 text-amber-400 border border-amber-400/20 text-[9px] px-1.5 py-0.5 rounded font-bold">審査中</span>`;
+      else if (req.status === 'approved') statusBadge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] px-1.5 py-0.5 rounded font-bold">承認済</span>`;
+      else if (req.status === 'rejected') statusBadge = `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[9px] px-1.5 py-0.5 rounded font-bold">却下済</span>`;
+
+      return `
+        <div class="bg-zinc-900 border border-zinc-850 p-3 rounded-lg text-xs space-y-2.5 hover:border-zinc-800 transition-all">
+          <div class="flex items-center justify-between"><span class="font-bold text-zinc-200 flex items-center gap-1">👥 ${escapeHtml(req.username || 'unknown')}</span>${statusBadge}</div>
+          <p class="text-[11px] text-zinc-400 bg-zinc-950 p-2 rounded border border-zinc-850">"${escapeHtml(req.message || '')}"</p>
+          <div class="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
+            <span>${date}</span>
+            <div class="flex gap-1.5">
+              ${req.status === 'pending' ? `
+                <button onclick="resolveRequest('${req.id}', true)" class="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold px-2 py-1 rounded transition-colors text-[9px]">承認</button>
+                <button onclick="resolveRequest('${req.id}', false)" class="bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 border border-rose-500/30 font-bold px-2 py-1 rounded transition-colors text-[9px]">却下</button>
+              ` : ''}
+              <button onclick="deleteRequestDoc('${req.id}')" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-bold px-2 py-1 rounded transition-colors text-[9px]">削除</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function switchTab(tabId) {
+  appState.activeTab = tabId;
+  ['home', 'about', 'tool', 'link'].forEach(sec => {
+    const element = document.getElementById('sec-' + sec);
+    const tabBtn = document.getElementById('tab-' + sec);
+    if (element) element.classList.toggle('hidden', sec !== tabId);
+    if (tabBtn) {
+      if (sec === tabId) {
+        tabBtn.classList.add('text-brand', 'bg-zinc-800/80');
+        tabBtn.classList.remove('text-zinc-400', 'hover:text-white', 'hover:bg-zinc-900');
+      } else {
+        tabBtn.classList.remove('text-brand', 'bg-zinc-800/80');
+        tabBtn.classList.add('text-zinc-400', 'hover:text-white', 'hover:bg-zinc-900');
+      }
+    }
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openAuthModal() {
+  hideError('authAlert');
+  document.getElementById('authModal').classList.remove('hidden');
+  switchAuthTab('login');
+}
+function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
+
+function switchAuthTab(tab) {
+  appState.activeAuthTab = tab;
+  const tabLogin = document.getElementById('authTabLogin');
+  const tabRegister = document.getElementById('authTabRegister');
+  const tabGuest = document.getElementById('authTabGuest');
+  const formLogin = document.getElementById('formLogin');
+  const formRegister = document.getElementById('formRegister');
+  const formGuest = document.getElementById('formGuest');
+  hideError('authAlert');
+
+  [tabLogin, tabRegister, tabGuest].forEach(btn => {
+    btn.classList.remove('border-brand', 'text-brand');
+    btn.classList.add('border-transparent', 'text-zinc-400');
+  });
+  [formLogin, formRegister, formGuest].forEach(form => form.classList.add('hidden'));
+
+  if (tab === 'login') {
+    tabLogin.classList.add('border-brand', 'text-brand');
+    formLogin.classList.remove('hidden');
+  } else if (tab === 'register') {
+    tabRegister.classList.add('border-brand', 'text-brand');
+    formRegister.classList.remove('hidden');
+  } else {
+    tabGuest.classList.add('border-brand', 'text-brand');
+    formGuest.classList.remove('hidden');
+  }
+}
+
+async function handleGoogleLogin() {
+  const alertDiv = document.getElementById('authAlert');
+  hideError('authAlert');
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    await auth.signInWithPopup(provider);
+    closeAuthModal();
+  } catch (err) {
+    const friendly = getAuthErrorMessage(err.code);
+    alertDiv.textContent = "Googleログイン失敗: " + (friendly || safeErrorMessage(err));
+    alertDiv.classList.remove('hidden');
+  }
+}
+
+async function handleLoginSubmit(event) {
+  event.preventDefault();
+  hideError('authAlert');
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+    closeAuthModal();
+  } catch (err) {
+    showError('authAlert', "ログイン失敗: " + (getAuthErrorMessage(err.code) || safeErrorMessage(err)));
+  }
+}
+
+async function handleRegisterSubmit(event) {
+  event.preventDefault();
+  hideError('authAlert');
+  const displayName = document.getElementById('registerName').value.trim();
+  const email = document.getElementById('registerEmail').value.trim();
+  const pass = document.getElementById('registerPassword').value;
+  try {
+    const credentials = await auth.createUserWithEmailAndPassword(email, pass);
+    const user = credentials.user;
+    await user.updateProfile({ displayName });
+    const initialUserData = { uid: user.uid, email: user.email, displayName, role: "user", approvedMember: false, createdAt: Date.now() };
+    await db.collection('users').doc(user.uid).set(initialUserData);
+    appState.userData = initialUserData;
+    closeAuthModal();
+  } catch (err) {
+    showError('authAlert', "登録失敗: " + (getAuthErrorMessage(err.code) || safeErrorMessage(err)));
+  }
+}
+
+async function handleGuestSubmit(event) {
+  event.preventDefault();
+  hideError('authAlert');
+  const nickname = document.getElementById('guestName').value.trim();
+  if (!nickname) {
+    showError('authAlert', 'ニックネームを入力してください。');
+    return;
+  }
+  try {
+    const credentials = await auth.signInAnonymously();
+    const user = credentials.user;
+    const initialUserData = { uid: user.uid, email: "", displayName: nickname, role: "user", approvedMember: false, createdAt: Date.now() };
+    await db.collection('users').doc(user.uid).set(initialUserData);
+    appState.userData = initialUserData;
+    closeAuthModal();
+  } catch (err) {
+    showError('authAlert', "ゲスト登録失敗: " + (getAuthErrorMessage(err.code) || safeErrorMessage(err)));
+  }
+}
+
+async function handleLogout() {
+  try { await auth.signOut(); }
+  catch (err) { console.error("Signout error:", err); }
+}
+
+auth.onAuthStateChanged(async (user) => {
+  appState.connection.authReady = true;
+  if (user) {
+    appState.currentUser = user;
+    if (unsubscribeUserData) unsubscribeUserData();
+    unsubscribeUserData = db.collection('users').doc(user.uid).onSnapshot(async (doc) => {
+      if (doc.exists) {
+        appState.userData = doc.data();
+      } else {
+        const initialUserData = {
+          uid: user.uid,
+          email: user.email || "",
+          displayName: user.displayName || "暇人メンバー",
+          role: "user",
+          approvedMember: false,
+          createdAt: Date.now()
+        };
+        appState.userData = initialUserData;
+        try {
+          await db.collection('users').doc(user.uid).set(initialUserData);
+        } catch (err) {
+          setGlobalStatus(`users 初期ドキュメント作成失敗: ${safeErrorMessage(err)}`, 'red');
+        }
+      }
+      handleAdminPrivileges(appState.userData.role);
+      renderAll();
+    }, (err) => {
+      setGlobalStatus(`users/${user.uid} の購読失敗: ${safeErrorMessage(err)}`, 'red');
+      console.error("User doc read failed:", err);
+    });
+
+    if (unsubscribeMyRequest) unsubscribeMyRequest();
+    unsubscribeMyRequest = db.collection('requests').doc(user.uid).onSnapshot((doc) => {
+      appState.myRequest = doc.exists ? doc.data() : null;
+      renderMemberSection();
+    }, (err) => {
+      setGlobalStatus(`自分の申請データ購読失敗: ${safeErrorMessage(err)}`, 'red');
+      console.error("My request check failed:", err);
+    });
+  } else {
+    appState.currentUser = null;
+    appState.userData = null;
+    appState.myRequest = null;
+    if (unsubscribeUserData) { unsubscribeUserData(); unsubscribeUserData = null; }
+    if (unsubscribeMyRequest) { unsubscribeMyRequest(); unsubscribeMyRequest = null; }
+    if (unsubscribeAllRequests) { unsubscribeAllRequests(); unsubscribeAllRequests = null; }
+    renderAll();
+  }
+});
+
+async function subscribeToBlogTimeline() {
+  if (unsubscribeBlogs) unsubscribeBlogs();
+
+  const ok = await preflightFirestore();
+  if (!ok) {
+    renderBlogs();
+    return;
+  }
+
+  unsubscribeBlogs = db.collection('blogs').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+    const posts = [];
+    snapshot.forEach(doc => posts.push({ id: doc.id, ...doc.data() }));
+    appState.blogPosts = posts;
+    if (!posts.length) {
+      setGlobalStatus('blogs コレクションは空です。管理者でサンプル投入できます。', 'amber');
+    } else if (!appState.connection.lastError) {
+      setGlobalStatus(appState.connection.isIframe ? 'オンライン接続OK。Google Sites埋め込み中ならGoogleログインだけ不安定な場合があります。' : 'オンライン接続OK。', 'emerald');
+    }
+    renderBlogs();
+  }, (error) => {
+    appState.connection.lastError = error;
+    setGlobalStatus(`ブログ取得失敗: ${safeErrorMessage(error)} / Firestore Rules・インデックス・DB作成状態を確認してね`, 'red');
+    console.error("Blog fetch error:", error);
+    renderBlogs();
+  });
+}
+
+function handleAdminPrivileges(role) {
+  const adminWrapper = document.getElementById('adminPanelWrapper');
+  if (!adminWrapper) return;
+
+  const isAdmin = role === 'admin';
+  const isModerator = role === 'moderator' || role === 'admin';
+
+  if (isModerator) {
+    adminWrapper.classList.remove('hidden');
+  } else {
+    adminWrapper.classList.add('hidden');
+  }
+
+  if (isAdmin) {
+    if (!unsubscribeAllRequests) {
+      unsubscribeAllRequests = db.collection('requests').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+        const reqs = [];
+        snapshot.forEach(doc => reqs.push({ id: doc.id, ...doc.data() }));
+        appState.allRequests = reqs;
+        renderAdminPanel();
+      }, (err) => {
+        showError('adminRequestError', "申請情報の同期エラー: " + safeErrorMessage(err));
+        setGlobalStatus(`管理者申請一覧の購読失敗: ${safeErrorMessage(err)}`, 'red');
+      });
+    }
+  } else {
+    if (unsubscribeAllRequests) {
+      unsubscribeAllRequests();
+      unsubscribeAllRequests = null;
+    }
+    appState.allRequests = [];
+  }
+
+  renderAdminPanel();
+}
+
+async function handleApplySubmit(event) {
+  event.preventDefault();
+  if (!appState.currentUser) return;
+  hideError('applyAlert');
+  const message = document.getElementById('applyMessage').value.trim();
+
+  try {
+    const userDisplayName = appState.userData ? appState.userData.displayName : (appState.currentUser.displayName || "暇人メンバー");
+    const requestDoc = {
+      uid: appState.currentUser.uid,
+      id: appState.currentUser.uid,
+      username: userDisplayName,
+      message,
+      status: "pending",
+      createdAt: Date.now(),
+      resolvedAt: null
+    };
+    await db.collection('requests').doc(appState.currentUser.uid).set(requestDoc);
+  } catch (err) {
+    showError('applyAlert', "送信に失敗しました ZOY: " + safeErrorMessage(err));
+  }
+}
+
+async function deleteMyRequest() {
+  if (!appState.currentUser) return;
+  try {
+    await db.collection('requests').doc(appState.currentUser.uid).delete();
+  } catch (err) {
+    setGlobalStatus(`申請削除失敗: ${safeErrorMessage(err)}`, 'red');
+  }
+}
+
+async function resolveRequest(reqUid, approve) {
+  hideError('adminRequestError');
+  try {
+    if (approve) {
+      await db.collection('users').doc(reqUid).set({ approvedMember: true, role: "moderator" }, { merge: true });
+      await db.collection('requests').doc(reqUid).update({ status: "approved", resolvedAt: Date.now() });
+    } else {
+      await db.collection('users').doc(reqUid).set({ approvedMember: false, role: "user" }, { merge: true });
+      await db.collection('requests').doc(reqUid).update({ status: "rejected", resolvedAt: Date.now() });
+    }
+  } catch (err) {
+    showError('adminRequestError', "判定アップデート失敗: " + safeErrorMessage(err));
+  }
+}
+
+async function deleteRequestDoc(reqUid) {
+  hideError('adminRequestError');
+  try {
+    await db.collection('requests').doc(reqUid).delete();
+  } catch (err) {
+    showError('adminRequestError', "申請データの削除失敗: " + safeErrorMessage(err));
+  }
+}
+
+async function submitNewBlog() {
+  hideError('adminBlogError');
+  hideError('adminBlogSuccess');
+  const title = document.getElementById('postTitle').value.trim();
+  const tagsString = document.getElementById('postTags').value.trim();
+  const content = document.getElementById('postContent').value.trim();
+  if (!title || !content) {
+    showError('adminBlogError', 'タイトルと本文は必須だ ZOY!');
+    return;
+  }
+
+  const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(Boolean) : [];
+  try {
+    const newPost = {
+      title, content, tags,
+      createdAt: Date.now(),
+      createdByUid: appState.currentUser ? appState.currentUser.uid : 'system',
+      createdByName: appState.userData ? appState.userData.displayName : 'ねこんご(管理者)',
+      likeCount: 0
+    };
+    await db.collection('blogs').add(newPost);
+    document.getElementById('postTitle').value = '';
+    document.getElementById('postTags').value = '';
+    document.getElementById('postContent').value = '';
+    const success = document.getElementById('adminBlogSuccess');
+    success.textContent = 'ブログを新しく投稿した ZOY! 🐾';
+    success.classList.remove('hidden');
+    setTimeout(() => success.classList.add('hidden'), 4000);
+  } catch (err) {
+    showError('adminBlogError', '投稿失敗: ' + safeErrorMessage(err));
+  }
+}
+
+async function seedInitialBlogs() {
+  hideError('adminBlogError');
+  hideError('adminBlogSuccess');
+  try {
+    for (const post of samplePosts) {
+      await db.collection('blogs').add({
+        title: post.title,
+        content: post.content,
+        tags: post.tags,
+        createdAt: post.createdAt,
+        createdByUid: appState.currentUser ? appState.currentUser.uid : "system",
+        createdByName: post.createdByName,
+        likeCount: post.likeCount
+      });
+    }
+    const success = document.getElementById('adminBlogSuccess');
+    success.textContent = '初期サンプルをFirestoreに流し込みました ZOY!';
+    success.classList.remove('hidden');
+  } catch (err) {
+    showError('adminBlogError', 'サンプル流し込み失敗: ' + safeErrorMessage(err));
+  }
+}
+
+function startEditBlogPost(postId) {
+  appState.editingPostId = postId;
+  renderBlogs();
+}
+
+function cancelEditBlogPost() {
+  appState.editingPostId = null;
+  renderBlogs();
+}
+
+async function saveEditBlogPost(postId) {
+  const titleEl = document.getElementById(`edit-title-${postId}`);
+  const tagsEl = document.getElementById(`edit-tags-${postId}`);
+  const contentEl = document.getElementById(`edit-content-${postId}`);
+  if (!titleEl || !contentEl) return;
+
+  const title = titleEl.value.trim();
+  const tagsString = tagsEl ? tagsEl.value.trim() : '';
+  const content = contentEl.value.trim();
+
+  if (!title || !content) {
+    alert('タイトルと本文は必須だ ZOY!');
+    return;
+  }
+
+  const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+  try {
+    await db.collection('blogs').doc(postId).update({
+      title,
+      tags,
+      content,
+      updatedAt: Date.now()
+    });
+    appState.editingPostId = null;
+    renderBlogs();
+    setGlobalStatus('ブログ記事を更新しました ZOY! 🐾', 'emerald');
+    setTimeout(() => setGlobalStatus(''), 3000);
+  } catch (err) {
+    setGlobalStatus(`ブログ更新失敗: ${safeErrorMessage(err)}`, 'red');
+  }
+}
+
+async function deleteBlogPost(postId) {
+  if (!confirm('本当にこのブログ記事を完全に削除しますか ZOY？')) return;
+  try {
+    await db.collection('blogs').doc(postId).delete();
+    setGlobalStatus('ブログ記事を削除しました ZOY! 🐾', 'emerald');
+    setTimeout(() => setGlobalStatus(''), 3000);
+  } catch (err) {
+    setGlobalStatus(`ブログ削除失敗: ${safeErrorMessage(err)}`, 'red');
+  }
+}
+
+async function handleLikeClick(blogId) {
+  if (!blogId || blogId.startsWith('sample-')) return;
+  const alreadyLiked = appState.likedPosts.includes(blogId);
+
+  try {
+    if (alreadyLiked) {
+      appState.likedPosts = appState.likedPosts.filter(id => id !== blogId);
+      localStorage.setItem('necongo_liked_posts', JSON.stringify(appState.likedPosts));
+      renderBlogs();
+      await db.collection('blogs').doc(blogId).update({
+        likeCount: firebase.firestore.FieldValue.increment(-1)
+      });
+    } else {
+      appState.likedPosts.push(blogId);
+      localStorage.setItem('necongo_liked_posts', JSON.stringify(appState.likedPosts));
+      renderBlogs();
+      await db.collection('blogs').doc(blogId).update({
+        likeCount: firebase.firestore.FieldValue.increment(1)
+      });
+    }
+  } catch (err) {
+    setGlobalStatus(`いいね同期失敗: ${safeErrorMessage(err)}`, 'red');
+  }
+}
+
+function renderToolsGrid() {
+  const grid = document.getElementById('toolsListGrid');
+  if (!grid) return;
+
+  // Combine hardcoded tools and dynamic tools from Firestore
+  // Filter out duplicates if we ever add a tool with the same ID
+  const allTools = [...appState.dynamicTools, ...toolItems];
+  const seenIds = new Set();
+  const uniqueTools = [];
+  for (const t of allTools) {
+    if (!seenIds.has(t.id)) {
+      seenIds.add(t.id);
+      uniqueTools.push(t);
+    }
+  }
+
+  const isApprovedMember = appState.userData && appState.userData.approvedMember;
+
+  // Filter tools:
+  // 1. Hide hidden tools (isHidden === true)
+  // 2. Hide members-only tools if user is not an approved member (membersOnly === true && !isApprovedMember)
+  const visibleTools = uniqueTools.filter(tool => {
+    if (tool.isHidden) return false;
+    if (tool.membersOnly && !isApprovedMember) return false;
+    return true;
+  });
+
+  // Update in-app display "全X種" counts in header!
+  const toolCountBadge = document.querySelector('#sec-tool h3 span');
+  if (toolCountBadge) {
+    toolCountBadge.textContent = `全${visibleTools.length}種`;
+  }
+
+  if (visibleTools.length === 0) {
+    grid.innerHTML = `
+      <div class="col-span-full text-center py-12 bg-zinc-900/40 rounded-2xl border border-zinc-800/80">
+        <p class="text-xs text-zinc-500 font-bold">表示できる自作ツールはありません ZOY。</p>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = visibleTools.map(tool => {
+    const isMemberOnlyBadge = tool.membersOnly ? `<span class="bg-amber-500/20 text-amber-300 text-[9px] px-1.5 py-0.5 rounded font-bold">メンバー限定</span>` : '';
+    return `
+      <a href="${tool.url}" target="_blank" rel="noopener noreferrer" class="block bg-zinc-900 rounded-2xl p-5 border border-zinc-800 hover:border-cyan-500/40 hover:-translate-y-1 transition-all duration-300 shadow-md">
+        <div class="flex items-center justify-between mb-3">
+          <div class="w-10 h-10 rounded-xl bg-brand/10 border border-brand/20 flex items-center justify-center text-xl">${tool.emoji}</div>
+          <div class="flex flex-col items-end gap-1">
+            <span class="text-[10px] text-brand font-bold uppercase tracking-wider font-mono">${tool.id}</span>
+            ${isMemberOnlyBadge}
+          </div>
+        </div>
+        <h4 class="text-base font-bold text-white mb-2">${tool.name}</h4>
+        <p class="text-zinc-400 text-xs leading-relaxed">${tool.desc}</p>
+      </a>
+    `;
+  }).join('');
+}
+
+async function subscribeToTools() {
+  if (unsubscribeTools) unsubscribeTools();
+  const ok = await preflightFirestore();
+  if (!ok) {
+    renderToolsGrid();
+    return;
+  }
+
+  unsubscribeTools = db.collection('tools').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+    const tools = [];
+    snapshot.forEach(doc => {
+      tools.push({ id: doc.id, ...doc.data() });
+    });
+    appState.dynamicTools = tools;
+    renderToolsGrid();
+    renderAdminToolsManager();
+  }, (error) => {
+    console.error("Tools fetch error:", error);
+    setGlobalStatus(`ツール情報の同期失敗: ${safeErrorMessage(error)}`, 'red');
+    renderToolsGrid();
+  });
+}
+
+function renderAdminToolsManager() {
+  const container = document.getElementById('adminToolsList');
+  if (!container) return;
+
+  const allTools = [...appState.dynamicTools, ...toolItems];
+  const seenIds = new Set();
+  const uniqueTools = [];
+  for (const t of allTools) {
+    if (!seenIds.has(t.id)) {
+      seenIds.add(t.id);
+      uniqueTools.push(t);
+    }
+  }
+
+  container.innerHTML = uniqueTools.map(tool => {
+    const isDefault = toolItems.some(item => item.id === tool.id);
+    const date = tool.createdAt ? new Date(tool.createdAt).toLocaleString() : '初期登録ツール';
+    
+    const hiddenStatusText = tool.isHidden 
+      ? `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[9px] px-1.5 py-0.5 rounded font-bold">非表示中</span>`
+      : `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] px-1.5 py-0.5 rounded font-bold">表示中</span>`;
+
+    const membersOnlyStatusText = tool.membersOnly
+      ? `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[9px] px-1.5 py-0.5 rounded font-bold">メンバー限定</span>`
+      : `<span class="bg-zinc-800 text-zinc-400 border border-zinc-700/50 text-[9px] px-1.5 py-0.5 rounded font-bold">全員公開</span>`;
+
+    return `
+      <div class="bg-zinc-900 border ${tool.isHidden ? 'border-rose-950/40 opacity-70' : 'border-zinc-850'} p-3 rounded-lg text-xs space-y-2.5 hover:border-zinc-800 transition-all">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-zinc-200 flex items-center gap-1.5">
+            <span class="text-base">${escapeHtml(tool.emoji)}</span>
+            <span>${escapeHtml(tool.name)}</span>
+            ${isDefault ? '<span class="text-[9px] text-zinc-500 bg-zinc-800 px-1 rounded">初期</span>' : ''}
+          </span>
+          <span class="text-[10px] text-zinc-500 font-mono">${escapeHtml(tool.id)}</span>
+        </div>
+        <p class="text-[11px] text-zinc-400 bg-zinc-950 p-2 rounded border border-zinc-850 truncate" title="${escapeHtml(tool.desc)}">${escapeHtml(tool.desc)}</p>
+        
+        <div class="flex gap-2">
+          ${hiddenStatusText}
+          ${membersOnlyStatusText}
+        </div>
+
+        <div class="flex items-center justify-between text-[10px] font-mono text-zinc-500 border-t border-zinc-800/40 pt-2">
+          <span>${date}</span>
+          <div class="flex items-center gap-1.5">
+            <button onclick="toggleToolMembersOnly('${tool.id}')" class="bg-zinc-800 hover:bg-zinc-750 text-zinc-300 border border-zinc-700 font-bold px-2 py-1 rounded transition-colors text-[9px]">
+              ${tool.membersOnly ? '全員公開にする ZOY!' : 'メンバー限定にする ZOY!'}
+            </button>
+
+            ${isDefault ? `
+              <button onclick="toggleToolVisibility('${tool.id}')" class="${tool.isHidden ? 'bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 border border-rose-500/30'} font-bold px-2 py-1 rounded transition-colors text-[9px]">
+                ${tool.isHidden ? '表示する' : '非表示（削除）'}
+              </button>
+            ` : `
+              <button onclick="deleteCustomTool('${tool.id}')" class="bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 border border-rose-500/30 font-bold px-2 py-1 rounded transition-colors text-[9px]">
+                完全に削除
+              </button>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function submitNewTool() {
+  hideError('adminToolError');
+  hideError('adminToolSuccess');
+  const toolId = document.getElementById('toolIdInput').value.trim();
+  const emoji = document.getElementById('toolEmojiInput').value.trim();
+  const name = document.getElementById('toolNameInput').value.trim();
+  const desc = document.getElementById('toolDescInput').value.trim();
+  const url = document.getElementById('toolUrlInput').value.trim();
+  const membersOnly = document.getElementById('toolMembersOnlyInput')?.checked || false;
+
+  if (!toolId || !emoji || !name || !desc || !url) {
+    showError('adminToolError', 'すべての項目を入力してください ZOY!');
+    return;
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(toolId)) {
+    showError('adminToolError', 'ツールIDは半角英数字、アンダースコア、ハイフンのみ使用できます。');
+    return;
+  }
+
+  try {
+    const newTool = {
+      emoji,
+      name,
+      desc,
+      url,
+      membersOnly,
+      isHidden: false,
+      createdAt: Date.now()
+    };
+    await db.collection('tools').doc(toolId).set(newTool);
+    
+    document.getElementById('toolIdInput').value = '';
+    document.getElementById('toolEmojiInput').value = '🎮';
+    document.getElementById('toolNameInput').value = '';
+    document.getElementById('toolDescInput').value = '';
+    document.getElementById('toolUrlInput').value = '';
+    if (document.getElementById('toolMembersOnlyInput')) {
+      document.getElementById('toolMembersOnlyInput').checked = false;
+    }
+
+    const success = document.getElementById('adminToolSuccess');
+    success.textContent = '新規ツールを追加しました ZOY! 🐾';
+    success.classList.remove('hidden');
+    setTimeout(() => success.classList.add('hidden'), 4000);
+  } catch (err) {
+    showError('adminToolError', '追加に失敗しました: ' + safeErrorMessage(err));
+  }
+}
+
+async function toggleToolMembersOnly(toolId) {
+  hideError('adminToolsManageError');
+  const allTools = [...appState.dynamicTools, ...toolItems];
+  const tool = allTools.find(t => t.id === toolId);
+  if (!tool) return;
+
+  const newMembersOnly = !tool.membersOnly;
+
+  try {
+    await db.collection('tools').doc(toolId).set({
+      emoji: tool.emoji || '🎮',
+      name: tool.name || '',
+      desc: tool.desc || '',
+      url: tool.url || '#',
+      membersOnly: newMembersOnly,
+      isHidden: tool.isHidden || false,
+      createdAt: tool.createdAt || Date.now()
+    }, { merge: true });
+  } catch (err) {
+    showError('adminToolsManageError', 'トグルに失敗しました: ' + safeErrorMessage(err));
+  }
+}
+
+async function toggleToolVisibility(toolId) {
+  hideError('adminToolsManageError');
+  const allTools = [...appState.dynamicTools, ...toolItems];
+  const tool = allTools.find(t => t.id === toolId);
+  if (!tool) return;
+
+  const newHidden = !tool.isHidden;
+
+  try {
+    await db.collection('tools').doc(toolId).set({
+      emoji: tool.emoji || '🎮',
+      name: tool.name || '',
+      desc: tool.desc || '',
+      url: tool.url || '#',
+      membersOnly: tool.membersOnly || false,
+      isHidden: newHidden,
+      createdAt: tool.createdAt || Date.now()
+    }, { merge: true });
+  } catch (err) {
+    showError('adminToolsManageError', '表示切り替えに失敗しました: ' + safeErrorMessage(err));
+  }
+}
+
+async function deleteCustomTool(toolId) {
+  if (!confirm('本当にこのカスタムツールを完全に削除しますか ZOY？')) return;
+  hideError('adminToolsManageError');
+  try {
+    await db.collection('tools').doc(toolId).delete();
+  } catch (err) {
+    showError('adminToolsManageError', '削除に失敗しました: ' + safeErrorMessage(err));
+  }
+}
+
+function copyToClipboard(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.innerText).then(() => {
+    setGlobalStatus('コピーしました。', 'emerald');
+    setTimeout(() => setGlobalStatus(''), 1200);
+  }).catch(() => {});
+}
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, s => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[s]));
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  renderAll();
+  renderToolsGrid();
+
+  if (appState.connection.isIframe) {
+    setGlobalStatus('Google Sites 埋め込み内で動作中。Googleログインのポップアップが失敗する場合は、メール/ゲストか別タブ公開URLを使ってください。', 'amber');
+  }
+
+  console.log("Firebase app initialized:", firebase.app().options.projectId);
+  console.log("Firestore instance ready:", !!db);
+  console.log("Auth instance ready:", !!auth);
+
+  await subscribeToBlogTimeline();
+  await subscribeToTools();
+});
+</script>
+
+<!--
+推奨 Firestore Rules（必要に応じて Firebase Console 側に設定）
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isApprovedMember() {
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        getUserData().approvedMember == true;
+    }
+    function isModerator() {
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        (getUserData().role == "moderator" || getUserData().role == "admin");
+    }
+    function isAdmin() {
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        getUserData().role == "admin";
+    }
+
+    match /users/{uid} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid && request.resource.data.role == "user" && request.resource.data.approvedMember == false;
+      allow update: if isAdmin() || (isOwner(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'approvedMember']));
+      allow delete: if isAdmin();
+    }
+
+    match /requests/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isAdmin();
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+    match /blogs/{blogId} {
+      allow read: if true;
+      allow create: if isModerator();
+      allow update: if isAdmin() || 
+                       (isModerator() && resource.data.createdByUid == request.auth.uid && request.resource.data.createdByUid == resource.data.createdByUid) || 
+                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount']));
+      allow delete: if isAdmin() || (isModerator() && resource.data.createdByUid == request.auth.uid);
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow delete: if isModerator() || resource.data.createdByUid == request.auth.uid;
+        allow update: if false;
+      }
+    }
+
+    match /tools/{toolId} {
+      allow read: if resource.data.membersOnly == false || isApprovedMember() || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /_healthcheck/{docId} {
+      allow read: if true;
+    }
+  }
+}
+-->
+</body>
+</html>
